@@ -1,0 +1,21 @@
+{% extends "auctions/layout.html" %}
+{% load static %}
+{% block body %}
+{% block content %}
+<!--  <h2>{{ category.name }}</h2>-->
+<hr>
+<div class="container" style="font-size:20px; max-width:100%; height:300px; margin-left:25%; margin-right:25%">
+
+  <p>{{ category.description }}</p>
+  <h3>Active Listings in {{ category.name }}</h3>
+  <ul>
+    {% for listing in active_listings %}
+      <li>
+        <a href="{% url 'listing_detail' listing.id %}">
+          {{ listing.title }} - Current Bid: {{ listing.current_bid }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+{% endblock %}
+{% endblock %}

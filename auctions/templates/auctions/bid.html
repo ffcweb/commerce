@@ -1,0 +1,13 @@
+{% extends 'auctions/layout.html' %}
+
+  <h2>Place Bid for {{ listing.title }}</h2>
+  <form method="post" action="{% url 'bid' listing_id=listing.id %}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Place Bid</button>
+  </form>
+  <a href="{% url 'listing_detail' listing_id=listing.id %}">Back to Listing</a>
+
+  <!-- For debugging purposes -->
+  <p>Form Action URL: {% url 'bid' listing_id=listing.id %}</p>
+  <p>Listing ID: {{ listing.id }}</p>
