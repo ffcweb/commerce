@@ -10,6 +10,7 @@ from django.db.models import Count
 from .models import Listing, Bid, Comment, Category,Watchlist
 from django.shortcuts import render, redirect, get_object_or_404
 from .forms import ListingForm, BidForm  # need to create a BidForm to handle bid input
+from django.db import transaction
 
 
 
@@ -52,132 +53,9 @@ def category_detail(request, category_id):
 # ==========================bid, close_listing, add_comment: =================================
 # need to create the corresponding templates (close_listing.html for the close_listing view)
 # need to update your URL patterns to include these new views.
-
 # bid view: Allows users to place bids on active listings.
 # Validates the bid amount and updates the current bid if the new bid is higher
-
-#
-# @login_required
-# def bid(request, listing_id):
-#     if request.method == 'POST':
-#         listing = get_object_or_404(Listing, pk=listing_id, is_active=True)
-#         bid_amount = request.POST.get('bid_amount')
-#         if bid_amount is not None and bid_amount.isdigit():
-#             bid_amount = float(bid_amount)
-#             if bid_amount > listing.current_bid:
-#                 Bid.objects.create(listing=listing, bidder=request.user, bid_amount=bid_amount)
-#                 listing.current_bid = bid_amount
-#                 listing.save()
-#                 return redirect('listing_detail', listing_id=listing_id)
-#             else:
-#                 return HttpResponseForbidden("Your bid must be higher than the current bid.")
-#         else:
-#             return HttpResponseForbidden("Invalid bid amount.")
-#     return redirect('index')
-
-# ======================== close_listing ======================================
-# close_listing view: Allows the creator of a listing to close it.
-# Only available for active listings.
-
-# @login_required
-# def close_listing(request, listing_id):
-#     listing = get_object_or_404(Listing, pk=listing_id, creator=request.user, is_active=True)
-#
-#     if request.method == 'POST':
-#         listing.is_active = False
-#         listing.save()
-#         return redirect('listing_detail', listing_id=listing_id)
-#
-#     return render(request, 'auctions/close_listing.html', {'listing': listing})
 # ==========================================================================
-
-# @login_required
-# def bid(request, listing_id):
-#     listing = get_object_or_404(Listing, pk=listing_id, is_active=True)
-#     if request.method == 'POST':
-#         form = BidForm(request.POST)
-#         if form.is_valid():
-#             bid_amount = form.cleaned_data['bid_amount']
-#             if bid_amount > listing.current_bid:
-#                 Bid.objects.create(listing=listing, bidder=request.user, bid_amount=bid_amount)
-#                 Listing.objects.filter(pk=listing_id).update(current_bid=bid_amount)
-#                 # Redirect to the listing detail page
-#                 return redirect('listing_detail', listing_id=listing_id)
-#             else:
-#                 # Bid amount is not higher than the current bid
-#                 return HttpResponseForbidden("Your bid must be higher than the current bid.")
-#         else:
-#             # Form is not valid.
-#             print(form.errors) # Add this line for debugging
-#             return HttpResponseForbidden("Invalid form submission.")
-#     else:
-#         # If it's a GET request, initialize an empty form
-#         form = BidForm()
-#
-#     # Render the template with the form and listing
-#     return render(request, 'auctions/bid.html', {'form': form, 'listing': listing})
-#
-# @login_required
-# def bid(request, listing_id):
-#     # Get the listing
-#     listing = get_object_or_404(Listing, pk=listing_id, is_active=True)
-#     if request.method == 'POST':
-#         # Bind the form with the POST data
-#         form = BidForm(request.POST)
-#         if form.is_valid():
-#             # Extract bid_amount from the form
-#             bid_amount = form.cleaned_data['bid_amount']
-#             # Check if the bid amount is higher than the current bid
-#             if bid_amount > listing.current_bid:
-#                 # Create a new Bid
-#                 Bid.objects.create(listing=listing, bidder=request.user, bid_amount=bid_amount)
-#                 # Update the current_bid of the listing
-#                 Listing.objects.filter(pk=listing_id).update(current_bid=bid_amount)
-#                 # Redirect to the listing detail page
-#                 return redirect('listing_detail', listing_id=listing_id)
-#             else:
-#                 # Bid amount is not higher than the current bid
-#                 return HttpResponseForbidden("Your bid must be higher than the current bid.")
-#         else:
-#             # Form is not valid
-#             print(form.errors)  # Print form errors for debugging
-#             return HttpResponseForbidden("Invalid form submission.")
-#     else:
-#         # If it's a GET request, initialize an empty form
-#         form = BidForm()
-#     # Render the template with the form and listing
-#     return render(request, 'auctions/place_bid.html', {'form': form, 'listing': listing})
-
-
-# @login_required
-# def bid(request, listing_id):
-#     listing = get_object_or_404(Listing, pk=listing_id, is_active=True)
-#     if request.method == 'POST':
-#         form = BidForm(request.POST)
-#         if form.is_valid():
-#             bid_amount = form.cleaned_data['bid_amount']
-#             if listing.current_bid is not None and bid_amount is not None:
-#                 if bid_amount > listing.current_bid:
-#                     # ----
-#                     if listing.current_bidder:
-#                         listing.current_bidder.is_highest_bidder = False
-#                         listing.current_bidder.save()
-#                         # Create a new Bid
-#                         bid = Bid.objects.create(listing=listing, bidder=request.user, bid_amount=bid_amount)
-#                         # Update the Listing with the new bid details
-#                         listing.current_bid = bid_amount
-#                         listing.current_bidder = bid.bidder
-#                         listing.save()
-#                         return redirect('listing_detail', listing_id=listing_id)
-#                     else:
-#                         return HttpResponseForbidden("Your bid must be higher than the current bid.")
-#                 else:
-#                     return HttpResponseForbidden("Invalid form submission.")
-#             else:
-#                 return render(request, 'auctions/place_bid.html', {'form': form, 'listing': listing})
-#         else:
-#             form = BidForm()
-#         return render(request, 'auctions/place_bid.html', {'form': form, 'listing': listing})
 
 @login_required
 def bid(request, listing_id):
@@ -209,16 +87,29 @@ def bid(request, listing_id):
 
     return render(request, 'auctions/place_bid.html', {'form': form, 'listing': listing})
 
-
+# ======================== close_listing ======================================
+# # close_listing view: Allows the creator of a listing to close it.
+# # Only available for active listings.
+# @login_required
+# def close_listing(request, listing_id):
+#     listing = get_object_or_404(Listing, pk=listing_id, creator=request.user, is_active=True)
+#     if request.method == 'POST':
+#         listing.is_active = False
+#         listing.save()
+#         return redirect('listing_detail', listing_id=listing_id)
+#     return render(request, 'auctions/close_listing.html', {'listing': listing})
 @login_required
 def close_listing(request, listing_id):
     listing = get_object_or_404(Listing, pk=listing_id, creator=request.user, is_active=True)
-    if request.method == 'POST':
-        listing.is_active = False
-        listing.save()
-        return redirect('listing_detail', listing_id=listing_id)
-    return render(request, 'auctions/close_listing.html', {'listing': listing})
 
+    if request.method == 'POST':
+        with transaction.atomic():
+            listing.is_active = False
+            listing.save()
+            return redirect('listing_detail', listing_id=listing_id)
+
+    # Handle non-POST requests
+    return render(request, 'auctions/close_listing.html', {'listing': listing})
 # ====================== add_comment ====================================
 
 @login_required
@@ -283,7 +174,7 @@ def register(request):
 
 # ==============================================
 
-
+@login_required
 def watchlist(request):
     if request.user.is_authenticated:
         watchlist_items = Watchlist.objects.get_or_create(user=request.user)[0].listings.all()
@@ -291,7 +182,7 @@ def watchlist(request):
     else:
         return render(request, 'auctions/login_required.html')
 
-
+@login_required
 def add_to_watchlist(request, listing_id):
     if request.user.is_authenticated:
         listing = get_object_or_404(Listing, pk=listing_id)
@@ -310,6 +201,19 @@ def add_to_watchlist(request, listing_id):
 #     else:
 #         return render(request, 'auctions/login_required.html')
 
+@login_required
+def remove_from_watchlist(request, listing_id):
+    if request.user.is_authenticated:
+        listing = get_object_or_404(Listing, pk=listing_id)
+        watchlist, created = Watchlist.objects.get_or_create(user=request.user)
+        if listing in watchlist.listings.all():
+            watchlist.listings.remove(listing)
+            messages.success(request, f'Listing "{listing.title}" removed from your watchlist.')
+        else:
+            messages.warning(request, f'Listing "{listing.title}" is not in your watchlist.')
+        return redirect('watchlist')
+    else:
+        return render(request, 'auctions/login_required.html')
 
 
 def listing_detail(request, listing_id):

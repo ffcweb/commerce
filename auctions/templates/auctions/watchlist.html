@@ -1,13 +1,39 @@
-
 {% extends "auctions/layout.html" %}
 {% load static %}
-
 {% block body %}
-<hr>
 <div class="container" style="font-size:20px; max-width:100%; height:300px; margin-left:25%; margin-right:25%">
 
-  <h2>Your Watchlist</h2>
+    <h2>Your Watchlist</h2>
 
+  {% if watchlist_items %}
+    <ul>
+      {% for item in watchlist_items %}
+        {% if item.id %}
+          <li>
+            {{ item.title }} -
+            <form method="post" action="{% url 'remove_from_watchlist' listing_id=item.id %}" id="removeForm{{ item.id }}">
+              {% csrf_token %}
+              <button type="button" onclick="confirmRemove('{{ item.id }}')">Remove from Watchlist</button>
+            </form>
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>Your watchlist is empty.</p>
+  {% endif %}
+
+  <script>
+    function confirmRemove(listingId) {
+      var confirmation = confirm('Are you sure you want to remove this item from your watchlist?');
+      if (confirmation) {
+        document.getElementById('removeForm' + listingId).submit();
+      }
+    }
+  </script>
+
+<!--==========================-->
+<hr>
   {% if watchlist_items %}
     <ul>
       {% for item in watchlist_items %}
@@ -19,5 +45,5 @@
   {% else %}
     <p>Your watchlist is empty.</p>
   {% endif %}
-
+</div>
 {% endblock %}
