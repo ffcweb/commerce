@@ -6,25 +6,26 @@
 <!--    <h2>Active Listings</h2>-->
 <!--    TODO-->
   {% for listing in active_listings %}
-<div class="card mb-5" style="max-width:100%; height:300px; margin:5%">
-  <div class="row no-gutters">
-    <div class="col-md-5">
-        <img src="{{ listing.url }}" class="card-img" style="width:300px;height:300px; item-aline:center; text-align: center;" alt="image">
-    </div>
-    <div class="col-md-3">
-              <div class="card-body">
-                  <h5 class="card-title">{{ listing.title }}</h5>
-                  <p class="card-text">Category:{{ listing.category }}</p>
-                  <p class="card-text"> Current Bid: ${{ listing.current_bid }}</p>
-<!--                  <p class="card-text"><small class="text-muted">Description:{{ listing.description }}</small></p>-->
-                  <p class="card-text"><small class="text-muted">Creator: {{ listing.creator }}</small></p>
-                  <a href="{% url 'listing_detail' listing.id %}" class="btn btn-primary">{{ listing.title }}</a>
-              </div>
+<div class="card mb-5" style="margin:5%">
+    <div class="row no-gutters">
+        <div class="col-md-5">
+            <img src="{{ listing.url }}" class="card-img" style="width:300px;height:300px; item-aline:center; text-align: center;" alt="image">
+        </div>
+
+        <div class="col-md-3">
+            <div class="card-body">
+                 <h5 class="card-title">{{ listing.title }}</h5>
+                <p class="card-text">Category:{{ listing.category }}</p>
+                <p class="card-text"> Current Bid: ${{ listing.starting_bid }}</p>
+                <p class="card-text"> Current Bid: ${{ listing.current_bid }}</p>
+                 <p class="card-text"><small class="text-muted">Description:{{ listing.description }}</small></p>
+                <p class="card-text"><small class="text-muted">Creator: {{ listing.creator }}</small></p>
+                <a href="{% url 'listing_detail' listing.id %}" class="btn btn-primary"> {{ listing.title }}</a>
+            </div>
+        </div>
+
       </div>
     </div>
-  </div>
-</div>
-
   {% endfor %}
 
 {% endblock %}

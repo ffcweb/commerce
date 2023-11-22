@@ -1,32 +1,17 @@
-{% extends 'auctions/layout.html' %}
-{% block content %}
-  <h2>Close Listing</h2>
-  <p>Are you sure you want to close the listing "{{ listing.title }}"?</p>
-  <form method="post" action="{% url 'close_listing' listing_id=listing.id %}">
-    {% csrf_token %}
-    <button type="submit">Close Listing</button>
-  </form>
-  <a href="{% url 'listing_detail' listing_id=listing.id %}">Back to Listing</a>
-{% endblock %}
+{% extends "auctions/layout.html" %}
+{% block body %}
+<div class="container">
+    <h2>Close Listing Confirmation</h2>
+    <p>Are you sure you want to close the listing "{{ listing.title }}"?</p>
 
-<form method="post" action="{% url 'close_listing' listing_id=listing.id %}">
+    {% if winning_bid %}
+        <p>Congratulations! You have won the auction with a bid of ${{ winning_bid.bid_amount }}.</p>
+    {% endif %}
 
-<!--
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Close Listing</title>
-</head>
-<body>
-    <h1>Close Listing</h1>
-    <p>Do you really want to close this listing?</p>
-    <form method="post" action="{% url 'bid' listing_id=listing.id %}">
+    <form method="post" action="{% url 'close_listing' listing_id=listing.id %}">
         {% csrf_token %}
-        <button type="submit">Close Listing</button>
+        <button type="submit" class="btn btn-danger">Yes, Close Listing</button>
+        <a href="{% url 'listing_detail' listing_id=listing.id %}" class="btn btn-secondary">Cancel</a>
     </form>
-</body>
-</html>
--->
+</div>
+{% endblock %}

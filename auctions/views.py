@@ -9,11 +9,12 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count
 from .models import Listing, Bid, Comment, Category,Watchlist
 from django.shortcuts import render, redirect, get_object_or_404
+from django.http import Http404
 from .forms import ListingForm, BidForm  # need to create a BidForm to handle bid input
 from django.db import transaction
-
-
-
+import logging
+from django.db.models import Max
+from .forms import YourBidForm  # Replace with the actual name of your bid form
 # -----------------------------------------------------------
 # def index(request):
 #     return render(request, "auctions/index.html")
@@ -23,7 +24,7 @@ def index(request):
     active_listings = Listing.objects.filter(is_active=True)
     return render(request, 'auctions/index.html', {'active_listings': active_listings})
 
-
+# ====================================================================
 def create_listing(request):
     if request.method == 'POST':
         form = ListingForm(request.POST, request.FILES)  # Include request.FILES to handle image uploads
@@ -39,7 +40,7 @@ def create_listing(request):
     categories = Category.objects.all()
     return render(request, 'auctions/create_listing.html', {'categories': categories, 'form': form})
 
-
+# =====================================================================================
 def category_list(request):
     categories = Category.objects.annotate(num_listings=Count('listings')).filter(num_listings__gt=0)
     return render(request, 'auctions/category_list.html', {'categories': categories})
@@ -88,19 +89,18 @@ def bid(request, listing_id):
     return render(request, 'auctions/place_bid.html', {'form': form, 'listing': listing})
 
 # ======================== close_listing ======================================
-# # close_listing view: Allows the creator of a listing to close it.
-# # Only available for active listings.
-# @login_required
-# def close_listing(request, listing_id):
-#     listing = get_object_or_404(Listing, pk=listing_id, creator=request.user, is_active=True)
-#     if request.method == 'POST':
-#         listing.is_active = False
-#         listing.save()
-#         return redirect('listing_detail', listing_id=listing_id)
-#     return render(request, 'auctions/close_listing.html', {'listing': listing})
 @login_required
 def close_listing(request, listing_id):
     listing = get_object_or_404(Listing, pk=listing_id, creator=request.user, is_active=True)
+
+    # Get the highest bid for the listing
+    winning_bid = Bid.objects.filter(listing=listing).aggregate(Max('bid_amount'))['bid_amount__max']
+
+    if winning_bid is not None:
+        # Get the bid object for the winning bid
+        winning_bid_obj = Bid.objects.get(listing=listing, bid_amount=winning_bid)
+    else:
+        winning_bid_obj = None
 
     if request.method == 'POST':
         with transaction.atomic():
@@ -108,8 +108,8 @@ def close_listing(request, listing_id):
             listing.save()
             return redirect('listing_detail', listing_id=listing_id)
 
-    # Handle non-POST requests
-    return render(request, 'auctions/close_listing.html', {'listing': listing})
+    return render(request, 'auctions/close_listing.html', {'listing': listing, 'winning_bid': winning_bid_obj})
+
 # ====================== add_comment ====================================
 
 @login_required
@@ -139,12 +139,12 @@ def login_view(request):
             })
     else:
         return render(request, "auctions/login.html")
-
+# ====================================================================
 
 def logout_view(request):
     logout(request)
     return HttpResponseRedirect(reverse("index"))
-
+# ====================================================================
 
 def register(request):
     if request.method == "POST":
@@ -181,7 +181,7 @@ def watchlist(request):
         return render(request, 'auctions/watchlist.html', {'watchlist_items': watchlist_items})
     else:
         return render(request, 'auctions/login_required.html')
-
+# ====================================================================
 @login_required
 def add_to_watchlist(request, listing_id):
     if request.user.is_authenticated:
@@ -192,15 +192,7 @@ def add_to_watchlist(request, listing_id):
     else:
         return render(request, 'auctions/login_required.html')
 
-# def remove_from_watchlist(request, listing_id):
-#     if request.user.is_authenticated:
-#         listing = get_object_or_404(Listing, pk=listing_id)
-#         watchlist = Watchlist.objects.get_or_create(user=request.user)[0]
-#         watchlist.listings.remove(listing)
-#         return redirect('watchlist')
-#     else:
-#         return render(request, 'auctions/login_required.html')
-
+# ====================================================================
 @login_required
 def remove_from_watchlist(request, listing_id):
     if request.user.is_authenticated:
@@ -215,7 +207,7 @@ def remove_from_watchlist(request, listing_id):
     else:
         return render(request, 'auctions/login_required.html')
 
-
+# ====================================================================
 def listing_detail(request, listing_id):
     listing = get_object_or_404(Listing, pk=listing_id)
     return render(request, 'auctions/listing_detail.html', {'listing': listing})

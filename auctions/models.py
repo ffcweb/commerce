@@ -76,6 +76,7 @@ class Bid(models.Model):
     bid_amount = models.DecimalField(max_digits=10, decimal_places=2)
     # Records the timestamp when the bid is created, automatically set to the current date and time.
     created_at = models.DateTimeField(auto_now_add=True)
+    is_winning = models.BooleanField(default=True)
 
 
 # The Comment model is designed to capture information about comments made on auction listings.
